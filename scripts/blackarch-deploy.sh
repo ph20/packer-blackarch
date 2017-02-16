@@ -222,7 +222,7 @@ EOF
 
 
 wprintf '[+] Entering chroot and configuring system'
-/usr/bin/arch-chroot ${CHROOT} /bin/bash -x ${CONFIG_SCRIPT}
+/usr/bin/arch-chroot ${CHROOT} /bin/bash ${CONFIG_SCRIPT}
 rm "${CHROOT}${CONFIG_SCRIPT}"
 
 # http://comments.gmane.org/gmane.linux.arch.general/48739

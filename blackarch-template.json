@@ -4,7 +4,9 @@
         "iso_checksum": "6473801fd86d3c6e485a7ed587835ef36967f9b0",
         "iso_checksum_type": "sha1",
         "ssh_timeout": "20m",
-        "country": "US"
+        "country": "US",
+        "created_at": "{{ isotime }}",
+        "arch": "x86_64"
     },
     "builders": [
         {
@@ -37,6 +39,7 @@
             "iso_checksum_type": "{{ user `iso_checksum_type` }}",
             "http_directory": "srv",
             "boot_wait": "5s",
+	    "headless": true,
             "boot_command": [
                 "<enter><wait10><wait10>",
                 "root<enter>blackarch<enter><wait5>",
@@ -54,7 +57,7 @@
     "provisioners": [
         {
             "type": "shell",
-            "execute_command": "{{ .Vars }} COUNTRY={{ user `country` }} sudo -E -S bash -x '{{ .Path }}'",
+            "execute_command": "{{ .Vars }} COUNTRY={{ user `country` }} sudo -E -S bash '{{ .Path }}'",
             "script": "scripts/blackarch-deploy.sh"
         },
         {
@@ -72,7 +75,7 @@
     "post-processors": [
         {
             "type": "vagrant",
-            "output": "output/packer_blackarch_{{ .Provider }}.box"
+            "output": "output/packer-blackarch-{{ user `created_at` }}-{{ user `arch`  }}-{{ .Provider }}.box"
         }
     ]
 }
