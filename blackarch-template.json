@@ -19,7 +19,8 @@
             "http_directory": "srv",
             "boot_wait": "5s",
             "boot_command": [
-                "<enter><wait10><wait10><wait10><wait10><wait10><wait10>",
+                "<enter><wait10><wait10>",
+                "root<enter>blackarch<enter><wait5>",
                 "/usr/bin/curl -O http://{{ .HTTPIP }}:{{ .HTTPPort }}/enable-ssh.sh<enter><wait5>",
                 "/usr/bin/curl -O http://{{ .HTTPIP }}:{{ .HTTPPort }}/poweroff.timer<enter><wait5>",
                 "/usr/bin/bash ./enable-ssh.sh<enter>"
@@ -39,7 +40,7 @@
             "iso_checksum_type": "{{ user `iso_checksum_type` }}",
             "http_directory": "srv",
             "boot_wait": "5s",
-	    "headless": true,
+	        "headless": true,
             "boot_command": [
                 "<enter><wait10><wait10>",
                 "root<enter>blackarch<enter><wait5>",

@@ -4,6 +4,9 @@
 HOST_NAME="blackarch-box"
 
 ################################################################################
+# check needed variables for running script
+if [ -z ${$PACKER_BUILDER_TYPE+x} ]; then  echo "\$PACKER_BUILDER_TYPE variable is unset"; exit 1;  fi
+
 # true / false
 TRUE=0
 FALSE=1
@@ -24,7 +27,6 @@ YELLOWB="`tput bold ; tput setaf 3`"
 BLINK="`tput blink`"
 NC="`tput sgr0`"
 
-PACKER_BUILDER_TYPE='qemu'
 CHROOT="/mnt"
 
 # strap shell information
