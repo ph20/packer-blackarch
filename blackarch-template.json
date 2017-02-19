@@ -40,7 +40,6 @@
             "iso_checksum_type": "{{ user `iso_checksum_type` }}",
             "http_directory": "srv",
             "boot_wait": "5s",
-	        "headless": true,
             "boot_command": [
                 "<enter><wait10><wait10>",
                 "root<enter>blackarch<enter><wait5>",
@@ -52,7 +51,8 @@
             "ssh_username": "vagrant",
             "ssh_password": "vagrant",
             "ssh_timeout": "{{ user `ssh_timeout` }}",
-            "shutdown_command": "sudo systemctl start poweroff.timer"
+            "shutdown_command": "sudo systemctl start poweroff.timer",
+            "headless" : "{{ user `headless`}}"
         }
     ],
     "provisioners": [

@@ -4,28 +4,12 @@
 HOST_NAME="blackarch-box"
 
 ################################################################################
-# check needed variables for running script
-if [ -z ${$PACKER_BUILDER_TYPE+x} ]; then  echo "\$PACKER_BUILDER_TYPE variable is unset"; exit 1;  fi
-
-# true / false
-TRUE=0
-FALSE=1
-
 # return codes
 SUCCESS=0
 FAILURE=1
 
-# colors
-WHITE="`tput setaf 7`"
-WHITEB="`tput bold ; tput setaf 7`"
-GREEN="`tput setaf 2`"
-GREENB="`tput bold ; tput setaf 2`"
-RED="`tput setaf 1`"
-REDB="`tput bold; tput setaf 1`"
-YELLOW="`tput setaf 3`"
-YELLOWB="`tput bold ; tput setaf 3`"
-BLINK="`tput blink`"
-NC="`tput sgr0`"
+# check needed variables for running script
+if [ -z ${$PACKER_BUILDER_TYPE+x} ]; then  echo "\$PACKER_BUILDER_TYPE variable is unset"; exit $FAILURE;  fi
 
 CHROOT="/mnt"
 
@@ -51,45 +35,25 @@ else
 fi
 ROOT_PART="${DISK}1"
 
-# print formatted output
-wprintf()
-{
-    fmt="${1}"
-
-    shift
-    printf "%s${fmt}%s" "${WHITE}" "${@}" "${NC}"
-
-    return $SUCCESS
-}
-
-# print error and exit
-err()
-{
-    printf "%s[-] ERROR: %s%s\n" "${RED}" "${@}" "${NC}"
-    exit $FAILURE
-
-    return $SUCCESS
-}
-
 check_env()
 {
     if [ `id -u` -ne 0 ]
     then
-        err "You must be root to run the BlackArch installer!"
+        echo "You must be root to run the BlackArch packer installer!"; exit $FAILURE;
     fi
     if [ -f "/var/lib/pacman/db.lck" ]
     then
-        err "pacman locked - Please remove /var/lib/pacman/db.lck"
+        echo "pacman locked - Please remove /var/lib/pacman/db.lck"; exit $FAILURE;
     fi
     if ! curl -s "http://www.google.com/" > /dev/null
     then
-        err "No Internet connection! Check your network (settings)."
+        echo "No Internet connection! Check your network (settings)."; exit $FAILURE;
     fi
     curl -s -o "${STRAP_SH}" ${STRAP_URL}
     sha1=`sha1sum ${STRAP_SH} | awk '{print $1}'`
     if [ "${sha1}" -ne ${STRAP_SHA1} ]
     then
-        err "Wrong SHA1 sum for ${STRAP_URL}: ${sha1} (orig: ${STRAP_SHA1}). Aborting!"
+        echo "Wrong SHA1 sum for ${STRAP_URL}: ${sha1} (orig: ${STRAP_SHA1}). Aborting!"; exit $FAILURE;
     fi
 }
 
@@ -99,7 +63,7 @@ enable_multilib()
 # enable multilib in pacman.conf if x86_64 present
 if [ "`uname -m`" = "x86_64" ]
 then
-    wprintf "[+] Enabling multilib support"
+    echo "[+] Enabling multilib support"
     if grep -q "#\[multilib\]" /etc/pacman.conf
     then
         # it exists but commented
@@ -120,7 +84,7 @@ prepare_env()
     sed -i 's/^#Color/Color/' /etc/pacman.conf
     enable_multilib
     # update pacman package database
-    wprintf "[+] Updating pacman database"
+    echo "[+] Updating pacman database"
     pacman -Syy --noconfirm
     pacman -S --noconfirm gptfdisk
     return $SUCCESS
@@ -131,45 +95,45 @@ prepare_env()
 prepare_disk()
 {
     # make and format partitions
-    wprintf "==> Clearing partition table on ${DISK}"
+    echo "[+] Clearing partition table on ${DISK}"
     /usr/bin/sgdisk --zap ${DISK}
-    wprintf "==> Destroying magic strings and signatures on ${DISK}"
+    echo "[+] Destroying magic strings and signatures on ${DISK}"
     /usr/bin/dd if=/dev/zero of=${DISK} bs=512 count=2048
     /usr/bin/wipefs --all ${DISK}
-    wprintf "==> Creating /root partition on ${DISK}"
+    echo "[+] Creating /root partition on ${DISK}"
     /usr/bin/sgdisk --new=1:0:0 ${DISK}
-    wprintf "==> Setting ${DISK} bootable"
+    echo "[+] Setting ${DISK} bootable"
     /usr/bin/sgdisk ${DISK} --attributes=1:set:2
-    wprintf '[+] Creating /root filesystem (ext4)'
+    echo '[+] Creating /root filesystem (ext4)'
     /usr/bin/mkfs.ext4 -O ^64bit -F -m 0 -q -L root ${ROOT_PART}
 }
 
 mount_filesystem()
 {
-    wprintf "==> Mounting ${ROOT_PART} to ${CHROOT}"
+    echo "[+] Mounting ${ROOT_PART} to ${CHROOT}"
     /usr/bin/mount -o noatime,errors=remount-ro ${ROOT_PART} ${CHROOT}
 }
 
 umount_filesystem()
 {
-    wprintf "[+] Unmounting filesystems"
+    echo "[+] Unmounting filesystems"
     umount -Rf ${CHROOT} > /dev/null 2>&1
 }
 
 install_base()
 {
-    wprintf "[+] Installing ArchLinux base packages"
+    echo "[+] Installing ArchLinux base packages"
     # install ArchLinux base and base-devel packages
     pacstrap ${CHROOT} base base-devel
     /usr/bin/arch-chroot ${CHROOT} pacman -Syy --force
-    wprintf "[+] Updating /etc files"
+    echo "[+] Updating /etc files"
     cp -r ${BI_PATH}/data/etc/. ${CHROOT}/etc/.
     /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm gptfdisk openssh syslinux
     /usr/bin/arch-chroot ${CHROOT} syslinux-install_update -i -a -m
     /usr/bin/sed -i "s|sda3|${ROOT_PART##/dev/}|" "${CHROOT}/boot/syslinux/syslinux.cfg"
     /usr/bin/sed -i 's/TIMEOUT 50/TIMEOUT 10/' "${CHROOT}/boot/syslinux/syslinux.cfg"
     cp ${BI_PATH}/data/boot/grub/splash.png ${CHROOT}/boot/grub/splash.png | true
-    wprintf '[+] Generating the filesystem table'
+    echo '[+] Generating the filesystem table'
     /usr/bin/genfstab -p ${CHROOT} >> "${CHROOT}/etc/fstab"
 }
 
@@ -187,7 +151,7 @@ run_strap()
 }
 
 configure_system(){
-wprintf '[+] Generating the system configuration script'
+echo '[+] Generating the system configuration script'
 /usr/bin/install --mode=0755 /dev/null "${CHROOT}${CONFIG_SCRIPT}"
 cp /etc/udev/rules.d/81-dhcpcd.rules "${CHROOT}/etc/udev/rules.d/81-dhcpcd.rules"
 
@@ -223,12 +187,12 @@ cat <<-EOF > "${CHROOT}${CONFIG_SCRIPT}"
 EOF
 
 
-wprintf '[+] Entering chroot and configuring system'
+echo '[+] Entering chroot and configuring system'
 /usr/bin/arch-chroot ${CHROOT} /bin/bash ${CONFIG_SCRIPT}
 rm "${CHROOT}${CONFIG_SCRIPT}"
 
 # http://comments.gmane.org/gmane.linux.arch.general/48739
-wprintf '[+] Adding workaround for shutdown race condition'
+echo '[+] Adding workaround for shutdown race condition'
 /usr/bin/install --mode=0644 /root/poweroff.timer "${CHROOT}/etc/systemd/system/poweroff.timer"
 }
 
