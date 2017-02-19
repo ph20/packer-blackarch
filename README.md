@@ -7,8 +7,10 @@ Building result on Atlas https://atlas.hashicorp.com/ph20/boxes/blackarch-core-x
 
 Usage
 -----
+```
 packer-io build -var='headless=true' -only=virtualbox-iso blackarch-template.json
 packer-io build -var='headless=true' -only=qemu blackarch-template.json
+```
 
 Resources used to create this
 -----------------------------
