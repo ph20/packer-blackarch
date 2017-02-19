@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-
+# stop on errors
+set -eu
 
 HOST_NAME="blackarch-box"
 
@@ -8,15 +9,8 @@ HOST_NAME="blackarch-box"
 SUCCESS=0
 FAILURE=1
 
-# check needed variables for running script
-if [ -z ${$PACKER_BUILDER_TYPE+x} ]; then  echo "\$PACKER_BUILDER_TYPE variable is unset"; exit $FAILURE;  fi
-
 CHROOT="/mnt"
 
-# strap shell information
-STRAP_URL="https://www.blackarch.org/strap.sh"
-STRAP_SHA1="34b1a3698a4c971807fb1fe41463b9d25e1a4a09"
-STRAP_SH="/root/strap.sh"
 # path to blackarch-installer
 BI_PATH="/usr/share/blackarch-installer"
 
@@ -25,37 +19,34 @@ KEYMAP='us'
 TIMEZONE='UTC'
 CONFIG_SCRIPT='/usr/local/bin/arch-config.sh'
 
-# stop on errors
-set -eu
-PASSWORD=$(/usr/bin/openssl passwd -crypt 'vagrant')
+echo "[+] Check environment for run deploying"
+# check needed variables for running script
+if [ -z ${PACKER_BUILDER_TYPE+x} ]; then  echo "\$PACKER_BUILDER_TYPE variable is unset"; exit $FAILURE;  fi
+
+# check environment for run script
+if [ `id -u` -ne 0 ]
+then
+    echo "You must be root to run the BlackArch packer installer!"; exit $FAILURE;
+fi
+
+if [ -f "/var/lib/pacman/db.lck" ]
+then
+    echo "pacman locked - Please remove /var/lib/pacman/db.lck"; exit $FAILURE;
+fi
+
+if ! curl -s "http://www.google.com/" > /dev/null
+then
+    echo "No Internet connection! Check your network (settings)."; exit $FAILURE;
+fi
+
+VAGRANT_PASSWORD=$(/usr/bin/openssl passwd -quiet  -crypt 'vagrant')
+ROOT_PASSWORD=$(/usr/bin/openssl passwd -quiet  -crypt 'blackarch')
 if [[ $PACKER_BUILDER_TYPE == "qemu" ]]; then
 	DISK='/dev/vda'
 else
 	DISK='/dev/sda'
 fi
 ROOT_PART="${DISK}1"
-
-check_env()
-{
-    if [ `id -u` -ne 0 ]
-    then
-        echo "You must be root to run the BlackArch packer installer!"; exit $FAILURE;
-    fi
-    if [ -f "/var/lib/pacman/db.lck" ]
-    then
-        echo "pacman locked - Please remove /var/lib/pacman/db.lck"; exit $FAILURE;
-    fi
-    if ! curl -s "http://www.google.com/" > /dev/null
-    then
-        echo "No Internet connection! Check your network (settings)."; exit $FAILURE;
-    fi
-    curl -s -o "${STRAP_SH}" ${STRAP_URL}
-    sha1=`sha1sum ${STRAP_SH} | awk '{print $1}'`
-    if [ "${sha1}" -ne ${STRAP_SHA1} ]
-    then
-        echo "Wrong SHA1 sum for ${STRAP_URL}: ${sha1} (orig: ${STRAP_SHA1}). Aborting!"; exit $FAILURE;
-    fi
-}
 
 
 enable_multilib()
@@ -85,8 +76,8 @@ prepare_env()
     enable_multilib
     # update pacman package database
     echo "[+] Updating pacman database"
-    pacman -Syy --noconfirm
-    pacman -S --noconfirm gptfdisk
+    pacman -Syy --noconfirm > /dev/null
+    pacman -S --noconfirm gptfdisk > /dev/null
     return $SUCCESS
 
 }
@@ -124,31 +115,27 @@ install_base()
 {
     echo "[+] Installing ArchLinux base packages"
     # install ArchLinux base and base-devel packages
-    pacstrap ${CHROOT} base base-devel
-    /usr/bin/arch-chroot ${CHROOT} pacman -Syy --force
+    /usr/bin/pacstrap ${CHROOT} base > /dev/null
+
+    # add blackach repo for prevent input wait in strap shell
+    echo '[blackarch]' >> "${CHROOT}/etc/pacman.conf"
+    echo 'Server = https://www.mirrorservice.org/sites/blackarch.org/blackarch/$repo/os/$arch' >> "${CHROOT}/etc/pacman.conf"
+
+    /usr/bin/arch-chroot ${CHROOT} pacman -Syy --force > /dev/null
+    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  base-devel > /dev/null
     echo "[+] Updating /etc files"
     cp -r ${BI_PATH}/data/etc/. ${CHROOT}/etc/.
-    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm gptfdisk openssh syslinux
+    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm gptfdisk openssh syslinux > /dev/null
     /usr/bin/arch-chroot ${CHROOT} syslinux-install_update -i -a -m
     /usr/bin/sed -i "s|sda3|${ROOT_PART##/dev/}|" "${CHROOT}/boot/syslinux/syslinux.cfg"
     /usr/bin/sed -i 's/TIMEOUT 50/TIMEOUT 10/' "${CHROOT}/boot/syslinux/syslinux.cfg"
     cp ${BI_PATH}/data/boot/grub/splash.png ${CHROOT}/boot/grub/splash.png | true
     echo '[+] Generating the filesystem table'
     /usr/bin/genfstab -p ${CHROOT} >> "${CHROOT}/etc/fstab"
-}
-
-run_strap()
-{
-    cp ${STRAP_SH} "${CHROOT}${STRAP_SH}"
-    chmod a+x "${CHROOT}${STRAP_SH}"
-    # add blackach repo for prevent input wait in strap shell
-    echo '[blackarch]' >> "${CHROOT}/etc/pacman.conf"
-    echo 'Server = https://www.mirrorservice.org/sites/blackarch.org/blackarch/$repo/os/$arch' >> "${CHROOT}/etc/pacman.conf"
-
-    #/usr/bin/arch-chroot ${CHROOT} /bin/bash ${STRAP_SH}
     # sync disk
     sync
 }
+
 
 configure_system(){
 echo '[+] Generating the system configuration script'
@@ -165,15 +152,13 @@ cat <<-EOF > "${CHROOT}${CONFIG_SCRIPT}"
 	/usr/bin/sed -i 's/#${LANGUAGE}/${LANGUAGE}/' /etc/locale.gen
 	/usr/bin/locale-gen
 	/usr/bin/mkinitcpio -p linux
-	/usr/bin/usermod --password ${PASSWORD} root
-	# https://wiki.archlinux.org/index.php/Network_Configuration#Device_names
-	#/usr/bin/ln -s /dev/null /etc/udev/rules.d/80-net-setup-link.rules
-	#/usr/bin/ln -s '/usr/lib/systemd/system/dhcpcd@.service' '/etc/systemd/system/multi-user.target.wants/dhcpcd@eth0.service'
+	/usr/bin/usermod --password ${ROOT_PASSWORD} root
 	/usr/bin/sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
 	/usr/bin/systemctl enable sshd.service
 
 	# Vagrant-specific configuration
-	/usr/bin/useradd --password ${PASSWORD} --comment 'Vagrant User' --create-home --user-group vagrant
+	echo "[+] Enable vagrant support"
+	/usr/bin/useradd --password ${VAGRANT_PASSWORD} --comment 'Vagrant User' --create-home --user-group vagrant
 	echo 'Defaults env_keep += "SSH_AUTH_SOCK"' > /etc/sudoers.d/10_vagrant
 	echo 'vagrant ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/10_vagrant
 	/usr/bin/chmod 0440 /etc/sudoers.d/10_vagrant
@@ -183,7 +168,8 @@ cat <<-EOF > "${CHROOT}${CONFIG_SCRIPT}"
 	/usr/bin/chmod 0600 /home/vagrant/.ssh/authorized_keys
 
 	# clean up
-	/usr/bin/pacman -Rcns --noconfirm gptfdisk
+	echo "[+] remove gptfdisk"
+	/usr/bin/pacman -Rcns --noconfirm gptfdisk > /dev/null
 EOF
 
 
@@ -198,12 +184,10 @@ echo '[+] Adding workaround for shutdown race condition'
 
 main()
 {
-    check_env
     prepare_env
     prepare_disk
     mount_filesystem
     install_base
-    run_strap
     configure_system
     umount_filesystem
     /usr/bin/systemctl reboot
