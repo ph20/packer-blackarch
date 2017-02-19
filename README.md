@@ -5,6 +5,11 @@ Packer BlackArch
 
 Building result on Atlas https://atlas.hashicorp.com/ph20/boxes/blackarch-core-x86_64
 
+Usage
+-----
+packer-io build -var='headless=true' -only=virtualbox-iso blackarch-template.json
+packer-io build -var='headless=true' -only=qemu blackarch-template.json
+
 Resources used to create this
 -----------------------------
 - https://github.com/elasticdog/packer-arch
