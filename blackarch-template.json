@@ -1,7 +1,7 @@
 {
     "variables": {
-        "iso_url": "http://www.mirrorservice.org/sites/blackarch.org/blackarch/iso/blackarchlinux-netinst-2017.01.28-x86_64.iso",
-        "iso_checksum": "6473801fd86d3c6e485a7ed587835ef36967f9b0",
+        "iso_url": "http://ftp.halifax.rwth-aachen.de/blackarch/iso/blackarchlinux-netinst-2017.03.01-x86_64.iso",
+        "iso_checksum": "4826a0f271696a127b67e7fe7205cc960c9eef1b",
         "iso_checksum_type": "sha1",
         "ssh_timeout": "20m",
         "country": "US",
@@ -76,7 +76,7 @@
     "post-processors": [
         {
             "type": "vagrant",
-            "output": "output/packer-blackarch-{{ user `created_at` }}-{{ user `arch`  }}-{{ .Provider }}.box"
+            "output": "output/blackarch-core-{{ user `created_at` }}-{{ user `arch`  }}-{{ .Provider }}.box"
         }
     ]
 }
