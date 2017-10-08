@@ -74,6 +74,11 @@ prepare_env()
     # enable color mode in pacman.conf
     sed -i 's/^#Color/Color/' /etc/pacman.conf
     enable_multilib
+
+    echo "==> Choose mirrors with best speed"
+    /usr/bin/cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.orig
+    /usr/bin/rankmirrors -n 6 /etc/pacman.d/mirrorlist.orig > /etc/pacman.d/mirrorlist
+
     # update pacman package database
     echo "[+] Updating pacman database"
     pacman -Syy --noconfirm > /dev/null
@@ -121,6 +126,9 @@ install_base()
     echo '[blackarch]' >> "${CHROOT}/etc/pacman.conf"
     echo 'Server = https://www.mirrorservice.org/sites/blackarch.org/blackarch/$repo/os/$arch' >> "${CHROOT}/etc/pacman.conf"
 
+    cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
+    cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
+
     /usr/bin/arch-chroot ${CHROOT} pacman -Syy --force > /dev/null
     /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  base-devel > /dev/null
     echo "[+] Updating /etc files"
@@ -132,6 +140,7 @@ install_base()
     cp ${BI_PATH}/data/boot/grub/splash.png ${CHROOT}/boot/grub/splash.png | true
     echo '[+] Generating the filesystem table'
     /usr/bin/genfstab -p ${CHROOT} >> "${CHROOT}/etc/fstab"
+
     # sync disk
     sync
 }
@@ -154,6 +163,7 @@ cat <<-EOF > "${CHROOT}${CONFIG_SCRIPT}"
 	/usr/bin/mkinitcpio -p linux
 	/usr/bin/usermod --password ${ROOT_PASSWORD} root
 	/usr/bin/sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
+	echo "PermitRootLogin yes" >> /etc/ssh/sshd_config # enable root login with password
 	/usr/bin/systemctl enable sshd.service
 
 	# Vagrant-specific configuration
@@ -182,6 +192,12 @@ echo '[+] Adding workaround for shutdown race condition'
 /usr/bin/install --mode=0644 /root/poweroff.timer "${CHROOT}/etc/systemd/system/poweroff.timer"
 }
 
+safe_reboot()
+{
+    echo '[+] Safe rebooting'
+    nohup bash -c "sleep 1; shutdown -r now" < /dev/null > /dev/null 2>&1 &
+}
+
 main()
 {
     prepare_env
@@ -190,7 +206,7 @@ main()
     install_base
     configure_system
     umount_filesystem
-    /usr/bin/systemctl reboot
+    safe_reboot
 }
 
 main
