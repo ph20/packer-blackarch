@@ -48,32 +48,9 @@ else
 fi
 ROOT_PART="${DISK}1"
 
-
-enable_multilib()
-{
-# enable multilib in pacman.conf if x86_64 present
-if [ "`uname -m`" = "x86_64" ]
-then
-    echo "[+] Enabling multilib support"
-    if grep -q "#\[multilib\]" /etc/pacman.conf
-    then
-        # it exists but commented
-        sed -i '/\[multilib\]/{ s/^#//; n; s/^#//; }' /etc/pacman.conf
-    elif ! grep -q "\[multilib\]" /etc/pacman.conf
-    then
-        # it does not exist at all
-        printf "[multilib]\nInclude = /etc/pacman.d/mirrorlist\n" \
-            >> /etc/pacman.conf
-    fi
-fi
-}
-
 prepare_env()
 {
     localectl set-keymap --no-convert us  # set keymap to use
-    # enable color mode in pacman.conf
-    sed -i 's/^#Color/Color/' /etc/pacman.conf
-    enable_multilib
 
     echo "==> Choose mirrors with best speed"
     /usr/bin/cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.orig
@@ -122,10 +99,8 @@ install_base()
     # install ArchLinux base and base-devel packages
     /usr/bin/pacstrap ${CHROOT} base > /dev/null
 
-    # add blackach repo for prevent input wait in strap shell
-    echo '[blackarch]' >> "${CHROOT}/etc/pacman.conf"
-    echo 'Server = https://www.mirrorservice.org/sites/blackarch.org/blackarch/$repo/os/$arch' >> "${CHROOT}/etc/pacman.conf"
-
+    # configure pacman and mirrors
+    cp --force /etc/pacman.conf ${CHROOT}/etc/pacman.conf
     cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
     cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
 
@@ -137,7 +112,6 @@ install_base()
     /usr/bin/arch-chroot ${CHROOT} syslinux-install_update -i -a -m
     /usr/bin/sed -i "s|sda3|${ROOT_PART##/dev/}|" "${CHROOT}/boot/syslinux/syslinux.cfg"
     /usr/bin/sed -i 's/TIMEOUT 50/TIMEOUT 10/' "${CHROOT}/boot/syslinux/syslinux.cfg"
-    cp ${BI_PATH}/data/boot/grub/splash.png ${CHROOT}/boot/grub/splash.png | true
     echo '[+] Generating the filesystem table'
     /usr/bin/genfstab -p ${CHROOT} >> "${CHROOT}/etc/fstab"
 
@@ -162,8 +136,10 @@ cat <<-EOF > "${CHROOT}${CONFIG_SCRIPT}"
 	/usr/bin/locale-gen
 	/usr/bin/mkinitcpio -p linux
 	/usr/bin/usermod --password ${ROOT_PASSWORD} root
+	# configure sshd
 	/usr/bin/sed -i 's/#UseDNS yes/UseDNS no/' /etc/ssh/sshd_config
-	echo "PermitRootLogin yes" >> /etc/ssh/sshd_config # enable root login with password
+	/usr/bin/sed -i 's/#UseDNS no/UseDNS no/' /etc/ssh/sshd_config
+	/usr/bin/sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 	/usr/bin/systemctl enable sshd.service
 
 	# Vagrant-specific configuration
@@ -189,7 +165,7 @@ rm "${CHROOT}${CONFIG_SCRIPT}"
 
 # http://comments.gmane.org/gmane.linux.arch.general/48739
 echo '[+] Adding workaround for shutdown race condition'
-/usr/bin/install --mode=0644 /root/poweroff.timer "${CHROOT}/etc/systemd/system/poweroff.timer"
+/usr/bin/install --mode=0644 /root/conf/poweroff.timer "${CHROOT}/etc/systemd/system/poweroff.timer"
 }
 
 safe_reboot()
