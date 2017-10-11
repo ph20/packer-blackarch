@@ -100,7 +100,6 @@ install_base()
     /usr/bin/pacstrap ${CHROOT} base > /dev/null
 
     # configure pacman and mirrors
-    cp --force ${CHROOT}/etc/pacman.conf ${CHROOT}/etc/pacman.conf.orig
     cp --force /etc/pacman.conf ${CHROOT}/etc/pacman.conf
     cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
     cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
