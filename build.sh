@@ -4,5 +4,14 @@ if [[ $FREE -lt 26214400 ]]; then               # 25G = 25*1024*1024k
      echo "for building need ~25G free space"; exit 1;
 fi;
 VAR_FILE=$(python2 genvars.py) || { echo 'generating variables failed' ; exit 1; }
-packer-io build -var-file=$VAR_FILE -only=virtualbox-iso blackarch-template.json
-packer-io build -var-file=$VAR_FILE -only=qemu blackarch-template.json
+CREATED_AT=$(python2 -c "import json; print(json.load(open('$VAR_FILE'))['created_at'])")
+PACKER_TEMPLATE=blackarch-template.json
+export BLACKARCH_PROFILE=core
+packer-io build -var-file=$VAR_FILE -only=virtualbox-iso ${PACKER_TEMPLATE} && \
+    vagrant up && \
+    vagrant ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/deploy-full.sh' && \
+    vagrant ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/cleanup.sh' && \
+    vagrant package --output ./output/blackarch-full-${CREATED_AT}-x86_64-virtualbox.box
+vagrant destroy -f
+sleep 5
+packer-io build -var-file=$VAR_FILE -only=qemu ${PACKER_TEMPLATE}

@@ -59,7 +59,9 @@ prepare_env()
     # update pacman package database
     echo "[+] Updating pacman database"
     pacman -Syy --noconfirm > /dev/null
-    pacman -S --noconfirm gptfdisk > /dev/null
+    pacman -S --noconfirm gptfdisk patch > /dev/null
+    echo "==> Add multilib to pacman"
+    cat /root/conf/pacman_conf_multilib.patch | patch --fuzz=2 --batch --ignore-whitespace --strip=0 --directory /
     return $SUCCESS
 
 }
@@ -104,11 +106,14 @@ install_base()
     cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
     cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
 
-    /usr/bin/arch-chroot ${CHROOT} pacman -Syy --force > /dev/null
-    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  base-devel > /dev/null
+    /usr/bin/arch-chroot ${CHROOT} pacman -Syy --force --quiet --noprogressbar > /dev/null
+    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  --quiet --noprogressbar --needed base-devel > /dev/null
+    # replace gcc to gcc-multilib
+    /usr/bin/arch-chroot ${CHROOT} bash -c "yes | pacman -S --quiet --noprogressbar --needed gcc-multilib > /dev/null"
     echo "[+] Updating /etc files"
     cp -r ${BI_PATH}/data/etc/. ${CHROOT}/etc/.
-    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm gptfdisk openssh syslinux > /dev/null
+    cp -r ${BI_PATH}/data/root/. ${CHROOT}/root/.
+    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm --quiet --noprogressbar gptfdisk openssh syslinux > /dev/null
     /usr/bin/arch-chroot ${CHROOT} syslinux-install_update -i -a -m
     /usr/bin/sed -i "s|sda3|${ROOT_PART##/dev/}|" "${CHROOT}/boot/syslinux/syslinux.cfg"
     /usr/bin/sed -i 's/TIMEOUT 50/TIMEOUT 10/' "${CHROOT}/boot/syslinux/syslinux.cfg"
@@ -149,7 +154,7 @@ cat <<-EOF > "${CHROOT}${CONFIG_SCRIPT}"
 	echo 'vagrant ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers.d/10_vagrant
 	/usr/bin/chmod 0440 /etc/sudoers.d/10_vagrant
 	/usr/bin/install --directory --owner=vagrant --group=vagrant --mode=0700 /home/vagrant/.ssh
-	/usr/bin/curl --output /home/vagrant/.ssh/authorized_keys --location https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
+	/usr/bin/curl -s --output /home/vagrant/.ssh/authorized_keys --location https://raw.github.com/mitchellh/vagrant/master/keys/vagrant.pub
 	/usr/bin/chown vagrant:vagrant /home/vagrant/.ssh/authorized_keys
 	/usr/bin/chmod 0600 /home/vagrant/.ssh/authorized_keys
 
@@ -162,10 +167,15 @@ EOF
 echo '[+] Entering chroot and configuring system'
 /usr/bin/arch-chroot ${CHROOT} /bin/bash ${CONFIG_SCRIPT}
 rm "${CHROOT}${CONFIG_SCRIPT}"
+cp -r ${BI_PATH}/data/user/. ${CHROOT}/home/vagrant/.  # customise vagrant environment
+/usr/bin/arch-chroot ${CHROOT} /bin/chown -R vagrant:vagrant /home/vagrant/
 
 # http://comments.gmane.org/gmane.linux.arch.general/48739
 echo '[+] Adding workaround for shutdown race condition'
 /usr/bin/install --mode=0644 /root/conf/poweroff.timer "${CHROOT}/etc/systemd/system/poweroff.timer"
+
+# restore original mirror list
+mv --force ${CHROOT}/etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist
 }
 
 safe_reboot()
