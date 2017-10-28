@@ -1,8 +1,5 @@
 #!/usr/bin/bash -x
 
-# restore original mirror list
-mv --force /etc/pacman.d/mirrorlist.orig /etc/pacman.d/mirrorlist
-
 # Clean the pacman cache.
 /usr/bin/yes | /usr/bin/pacman -Scc
 /usr/bin/pacman-optimize

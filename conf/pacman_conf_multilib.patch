@@ -1,0 +1,15 @@
+# patch for add multilib reposytory to /etc/pacman.conf
+# usage:
+# cat pacman_conf_multilib.patch | patch --fuzz=2 --batch --ignore-whitespace --strip=0 --directory /
+
+--- /etc/pacman.conf
++++ /etc/pacman.conf
+@@ -84,6 +84,8 @@
+ [community]
+ Include = /etc/pacman.d/mirrorlist
+ 
++[multilib]
++Include = /etc/pacman.d/mirrorlist
+ 
+ # An example of a custom package repository.  See the pacman manpage for
+ # tips on creating your own repositories.
