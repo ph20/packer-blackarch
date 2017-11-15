@@ -12,6 +12,7 @@ profile        = ENV['BLACKARCH_PROFILE'] || "core"
 machine_name   = "blackarch-#{profile}"
 
 Vagrant.configure("2") do |config|
+  config.vm.network "forwarded_port", guest: 9392, host_ip: "127.0.0.1", host: 9392
   config.vm.define "#{machine_name}" do |blackarch|
     blackarch.vm.box = "#{machine_name}-#{created_at}-x86_64"
     blackarch.ssh.forward_agent = true

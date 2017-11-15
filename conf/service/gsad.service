@@ -1,0 +1,19 @@
+[Unit]
+Description=OpenVAS Manager
+After=network.target
+After=openvas-scanner.service
+After=openvas-manager.service
+
+[Service]
+Type=forking
+EnvironmentFile=-/etc/sysconfig/gsad
+ExecStart=/usr/sbin/gsad --listen $GSA_ADDRESS --port $GSA_PORT $OPTIONS
+Restart=always
+RestartSec=1
+User=root
+Group=root
+TimeoutSec=1200
+
+[Install]
+WantedBy=multi-user.target
+
