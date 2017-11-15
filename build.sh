@@ -9,6 +9,11 @@ PACKER_TEMPLATE=blackarch-template.json
 export BLACKARCH_PROFILE=core
 packer-io build -var-file=$VAR_FILE -only=virtualbox-iso ${PACKER_TEMPLATE} && \
     vagrant up && \
+    vagrant ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/deploy-common.sh' && \
+    vagrant ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/configure.sh' && \
+    vagrant ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/cleanup.sh' && \
+    vagrant package --output ./output/blackarch-common-${CREATED_AT}-x86_64-virtualbox.box && \
+    vagrant up && \
     vagrant ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/deploy-full.sh' && \
     vagrant ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/cleanup.sh' && \
     vagrant package --output ./output/blackarch-full-${CREATED_AT}-x86_64-virtualbox.box
