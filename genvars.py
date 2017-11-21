@@ -14,7 +14,6 @@ import urllib2
 from lxml import html as html
 
 DOWNLOAD_PAGE = 'https://blackarch.org/downloads.html'
-JSON_OUTPUT = os.path.join(os.path.dirname(__file__), 'variables.json')
 
 
 class ExitException(Exception):
@@ -58,7 +57,11 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         sys.stderr.write('generating variables aborted')
         sys.exit(1)
-
-    with open(JSON_OUTPUT, 'w') as variables_file:
-        json.dump(json_data, fp=variables_file, indent=4, sort_keys=True)
-    sys.stdout.write(JSON_OUTPUT)
+    if len(sys.argv) == 2:
+        with open(sys.argv[1], 'w') as variables_file:
+            json.dump(json_data, fp=variables_file, indent=4, sort_keys=True)
+    elif len(sys.argv) == 1:
+        sys.stdout.write(json_data)
+    else:
+        sys.stderr.write('Incorrect arguments\n')
+        sys.exit(1)

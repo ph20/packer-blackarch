@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
+source venv
 FREE=`df -k --output=avail "$PWD" | tail -n1`   # df -k not df -h
 if [[ $FREE -lt 26214400 ]]; then               # 25G = 25*1024*1024k
      echo "for building need ~25G free space"; exit 1;
 fi;
-VAR_FILE=$(python2 genvars.py) || { echo 'generating variables failed' ; exit 1; }
+python2 genvars.py $VAR_FILE || { echo 'generating variables failed' ; exit 1; }
 CREATED_AT=$(python2 -c "import json; print(json.load(open('$VAR_FILE'))['created_at'])")
 PACKER_TEMPLATE=blackarch-template.json
 export BLACKARCH_PROFILE=core
