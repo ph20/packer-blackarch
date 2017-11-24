@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python2.7
 # -*- coding: utf-8 -*-
 
 """
@@ -60,8 +60,6 @@ if __name__ == '__main__':
     if len(sys.argv) == 2:
         with open(sys.argv[1], 'w') as variables_file:
             json.dump(json_data, fp=variables_file, indent=4, sort_keys=True)
-    elif len(sys.argv) == 1:
-        sys.stdout.write(json_data)
     else:
         sys.stderr.write('Incorrect arguments\n')
         sys.exit(1)
