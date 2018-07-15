@@ -52,14 +52,15 @@ prepare_env()
 {
     localectl set-keymap --no-convert us  # set keymap to use
 
-    echo "==> Choose mirrors with best speed"
-    /usr/bin/cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.orig
-    /usr/bin/rankmirrors -n 6 /etc/pacman.d/mirrorlist.orig > /etc/pacman.d/mirrorlist
-
     # update pacman package database
     echo "[+] Updating pacman database"
-    pacman -Syy --noconfirm > /dev/null
-    pacman -S --noconfirm gptfdisk patch > /dev/null
+    pacman -Syy --noconfirm --quiet --noprogressbar > /dev/null
+    pacman -S --noconfirm  --quiet --noprogressbar --needed pacman-contrib gptfdisk patch > /dev/null
+
+    echo "==> Choose mirrors with best speed"
+    /usr/bin/cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.orig
+    /usr/bin/rankmirrors -n 3 /etc/pacman.d/mirrorlist.orig > /etc/pacman.d/mirrorlist
+
     echo "==> Add multilib to pacman"
     cat /root/conf/pacman_conf_multilib.patch | patch --fuzz=2 --batch --ignore-whitespace --strip=0 --directory /
     return $SUCCESS
@@ -105,8 +106,9 @@ install_base()
     cp --force /etc/pacman.conf ${CHROOT}/etc/pacman.conf
     cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
     cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
+    cp --force /etc/pacman.d/blackarch-mirrorlist ${CHROOT}/etc/pacman.d/blackarch-mirrorlist
 
-    /usr/bin/arch-chroot ${CHROOT} pacman -Syy --force --quiet --noprogressbar > /dev/null
+    /usr/bin/arch-chroot ${CHROOT} pacman -Syy --overwrite --quiet --noprogressbar > /dev/null
     /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  --quiet --noprogressbar --needed base-devel > /dev/null
     # replace gcc to gcc-multilib
     /usr/bin/arch-chroot ${CHROOT} bash -c "yes | pacman -S --quiet --noprogressbar --needed gcc-multilib > /dev/null"
