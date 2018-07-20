@@ -107,9 +107,9 @@ install_base()
     cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
     cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
     cp --force /etc/pacman.d/blackarch-mirrorlist ${CHROOT}/etc/pacman.d/blackarch-mirrorlist
-
     /usr/bin/arch-chroot ${CHROOT} pacman -Syy --overwrite --quiet --noprogressbar > /dev/null
-    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  --quiet --noprogressbar --needed base-devel > /dev/null
+    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  --quiet --noprogressbar --needed base-devel ruby-pkg-config cmake > /dev/null
+    /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm --overwrite --needed --quiet --noprogressbar archlinux-keyring > /dev/null
     # replace gcc to gcc-multilib
     /usr/bin/arch-chroot ${CHROOT} bash -c "yes | pacman -S --quiet --noprogressbar --needed gcc-multilib > /dev/null"
     echo "[+] Updating /etc files"

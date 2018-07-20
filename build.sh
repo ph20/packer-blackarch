@@ -19,4 +19,6 @@ packer-io build -var-file=$VAR_FILE -only=virtualbox-iso ${PACKER_TEMPLATE} && \
     vagrant package --output ./output/blackarch-full-${CREATED_AT}-x86_64-virtualbox.box
 vagrant destroy -f
 sleep 5
-packer-io build -var-file=$VAR_FILE -only=qemu ${PACKER_TEMPLATE}
+#packer-io build -var-file=$VAR_FILE -only=qemu ${PACKER_TEMPLATE}
+
+#signature from "Christian Rebischke (Arch Linux Security Team-Member) <Chris.Rebischke@archlinux.org>" is unknown trust

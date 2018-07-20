@@ -19,7 +19,7 @@
             "http_directory": "srv",
             "boot_wait": "5s",
             "boot_command": [
-                "<enter><wait10><wait10>",
+                "<enter><wait10><wait10><wait10>",
                 "root<enter><wait5>blackarch<enter><wait5>",
                 "/usr/bin/curl -s http://{{ .HTTPIP }}:{{ .HTTPPort }}/enable-ssh.sh | /usr/bin/bash<enter>"
             ],
@@ -39,7 +39,7 @@
             "http_directory": "srv",
             "boot_wait": "5s",
             "boot_command": [
-                "<enter><wait10><wait10>",
+                "<enter><wait10><wait10><wait10>",
                 "root<enter>blackarch<enter><wait5>",
                 "/usr/bin/curl -O http://{{ .HTTPIP }}:{{ .HTTPPort }}/enable-ssh.sh<enter><wait5>",
                 "/usr/bin/curl -O http://{{ .HTTPIP }}:{{ .HTTPPort }}/poweroff.timer<enter><wait5>",
