@@ -2,19 +2,17 @@
 # -*- coding: utf-8 -*-
 
 """
-Script for generating variables
+Script for obtaining BlackArch iso url and sha1sum
 """
 
 import os
 import sys
-import json
 import datetime
 
 import urllib2
 from lxml import html as html
 
 DOWNLOAD_PAGE = 'https://blackarch.org/downloads.html'
-JSON_OUTPUT = os.path.join(os.path.dirname(__file__), 'variables.json')
 
 
 class ExitException(Exception):
@@ -51,14 +49,11 @@ def gen_vars():
 
 if __name__ == '__main__':
     try:
-        json_data = gen_vars()
+        iso_url, sha1sum = obtain_iso_url()
+        sys.stdout.write(iso_url + ' ' + sha1sum)
     except ExitException as e:
         sys.stderr.write(str(e) + os.linesep)
         sys.exit(1)
     except KeyboardInterrupt:
         sys.stderr.write('generating variables aborted')
         sys.exit(1)
-
-    with open(JSON_OUTPUT, 'w') as variables_file:
-        json.dump(json_data, fp=variables_file, indent=4, sort_keys=True)
-    sys.stdout.write(JSON_OUTPUT)
