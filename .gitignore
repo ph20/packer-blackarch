@@ -1,4 +1,6 @@
+.idea
 output
 packer_cache
 variables.json
 .vagrant
+mkmf.log
