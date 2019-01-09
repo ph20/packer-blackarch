@@ -2,7 +2,6 @@
 require 'rake'
 require 'sys/filesystem'
 require 'mkmf'
-require 'json'
 
 WORKSPACE = File.expand_path File.dirname(__FILE__)
 NEEDED_FREE_SPACE = 26214400
@@ -11,7 +10,7 @@ PACKER_TEMPLATE = File.join WORKSPACE, "blackarch-template.json"
 VAR_FILE = File.join WORKSPACE, "variables.json"
 $PYTHON = nil
 $PACKER = nil
-
+$VAGRANT = nil
 
 desc "Check needed free space for building"
 task :check_free_space do
@@ -40,6 +39,16 @@ task :check_packer do
   end
 end
 
+desc "Check present vagrant"
+task :check_vagrant do
+  $VAGRANT = find_executable 'vagrant'
+  if $VAGRANT
+    puts "vagrant detected: #{$VAGRANT}"
+  else
+    abort("Can't find vagrant executable")
+  end
+end
+
 desc "Generating variables"
 task :generate_variables => :check_python do
   iso_url, iso_checksum = %x[ #{$PYTHON} #{WORKSPACE}/isourl.py ].split
@@ -51,20 +60,29 @@ task :generate_variables => :check_python do
 
 end
 
-desc "Build base vagrant box"
+desc "Build core"
 task :build_core => [:generate_variables, :check_packer] do
   was_good = system("#{$PACKER} build -var-file=#{VAR_FILE} -only=virtualbox-iso #{PACKER_TEMPLATE}")
 end
 
-
-def clear(path)
-  files = Dir.glob(path) #will build an array of the full filepath & filename(s)
-  files.each do |f|
-    puts
-    File.delete(f)
-  end
+def run(cmd)
+  system(cmd) || abort("error: #{cmd}")
 end
+
+def run_script(script)
+  run("#{$VAGRANT} ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/#{script}'")
+end
+
+desc "Build base"
+task :build_base => [:check_vagrant, :generate_variables, :build_core] do
+  run "#{$VAGRANT} up"
+  run_script 'deploy-common.sh'
+  run_script 'configure.sh'
+  run_script 'cleanup.sh'
+  run "#{$VAGRANT} package --output ./output/blackarch-common-${CREATED_AT}-x86_64-virtualbox.box"
+end
+
 desc "Clear"
 task :clear do
-  `rm -Rf ./output/*.box ./packer_cache/ ./.vagrant/ ./variables.json`
+  `rm -vRf ./output/*.box ./packer_cache/ ./.vagrant/ ./variables.json`
 end
