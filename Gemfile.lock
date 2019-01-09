@@ -1,0 +1,17 @@
+GEM
+  remote: https://rubygems.org/
+  specs:
+    ffi (1.10.0)
+    json (2.1.0)
+    sys-filesystem (1.2.0)
+      ffi
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  json
+  sys-filesystem
+
+BUNDLED WITH
+   1.11.2
