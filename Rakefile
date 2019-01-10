@@ -1,6 +1,7 @@
 #!/env ruby
 require 'rake'
 require 'sys/filesystem'
+require 'json'
 require 'mkmf'
 
 WORKSPACE = File.expand_path File.dirname(__FILE__)
@@ -60,26 +61,40 @@ task :generate_variables => :check_python do
 
 end
 
+def created_at
+  JSON.parse(File.read VAR_FILE)['created_at']
+end
+
 desc "Build core"
 task :build_core => [:generate_variables, :check_packer] do
   was_good = system("#{$PACKER} build -var-file=#{VAR_FILE} -only=virtualbox-iso #{PACKER_TEMPLATE}")
 end
 
-def run(cmd)
-  system(cmd) || abort("error: #{cmd}")
+def run(cmd, env = {})
+  system(env, cmd) || abort("error: #{cmd}")
 end
 
 def run_script(script)
   run("#{$VAGRANT} ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/#{script}'")
 end
 
-desc "Build base"
-task :build_base => [:check_vagrant, :generate_variables, :build_core] do
-  run "#{$VAGRANT} up"
+desc 'Build common'
+task :build_common => [:check_vagrant, :generate_variables, :build_core] do
+  run "#{$VAGRANT} up", {'BLACKARCH_PROFILE' => 'core'}
   run_script 'deploy-common.sh'
   run_script 'configure.sh'
   run_script 'cleanup.sh'
-  run "#{$VAGRANT} package --output ./output/blackarch-common-${CREATED_AT}-x86_64-virtualbox.box"
+  run "#{$VAGRANT} package --output ./output/blackarch-common-#{created_at}-x86_64-virtualbox.box", {'BLACKARCH_PROFILE' => 'core'}
+  run "#{$VAGRANT}  destroy -f", {'BLACKARCH_PROFILE' => 'core'}
+end
+
+desc 'Build full'
+task :build_full => [:check_vagrant, :generate_variables, :build_core] do
+  run "#{$VAGRANT} up", {'BLACKARCH_PROFILE' => 'common'}
+  run_script 'deploy-full.sh'
+  run_script 'cleanup.sh'
+  run "#{$VAGRANT} package --output ./output/blackarch-full-#{created_at}-x86_64-virtualbox.box", {'BLACKARCH_PROFILE' => 'common'}
+  run "#{$VAGRANT}  destroy -f", {'BLACKARCH_PROFILE' => 'common'}
 end
 
 desc "Clear"
