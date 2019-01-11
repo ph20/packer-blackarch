@@ -106,7 +106,7 @@ install_base()
     cp --force /etc/pacman.conf ${CHROOT}/etc/pacman.conf
     cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
     cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
-    cp --force /etc/pacman.d/blackarch-mirrorlist ${CHROOT}/etc/pacman.d/blackarch-mirrorlist
+    cp --force /etc/pacman.d/blackarch-mirrorlist ${CHROOT}/etc/pacman.d/blackarch-mirrorlist || true
     /usr/bin/arch-chroot ${CHROOT} pacman -Syy --overwrite --quiet --noprogressbar > /dev/null
     /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  --quiet --noprogressbar --needed base-devel ruby-pkg-config cmake > /dev/null
     /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm --overwrite --needed --quiet --noprogressbar archlinux-keyring > /dev/null
