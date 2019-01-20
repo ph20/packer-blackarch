@@ -1,28 +1,45 @@
 #!/env ruby
 require 'rake'
+require 'rake/clean'
 require 'sys/filesystem'
 require 'json'
 require 'mkmf'
+require_relative 'myfun'
 
-WORKSPACE = File.expand_path File.dirname(__FILE__)
 NEEDED_FREE_SPACE = 25600
 PACKER_TEMPLATE = File.join WORKSPACE, "blackarch-template.json"
 
-VAR_FILE = File.join WORKSPACE, "variables.json"
 $PYTHON = nil
 $PACKER = nil
 $VAGRANT = nil
 
-def created_at
-  JSON.parse(File.read VAR_FILE)['created_at']
-end
 
-def run(cmd, env = {})
-  system(env, cmd) || abort("error: #{cmd}")
-end
+class VagrantCLI
 
-def run_script(script)
-  run("#{$VAGRANT} ssh --command='/usr/bin/sudo /bin/bash /vagrant/scripts/#{script}'")
+  def initialize(profile_name='core')
+    @profile_name = profile_name
+  end
+
+  def cmd(command)
+    system({'BLACKARCH_PROFILE' => @profile_name}, "#{$VAGRANT} #{command}") || abort("error: #{command}")
+  end
+
+  def up()
+    cmd 'up'
+  end
+
+  def destroy()
+    cmd 'destroy -f'
+  end
+
+  def package(target)
+    cmd "package --output #{target}"
+  end
+
+  def script(name, sudo=true)
+    sudo_path = sudo ? '/usr/bin/sudo' : ''
+    cmd("ssh --command='#{sudo_path} /bin/bash /vagrant/scripts/#{name}'")
+  end
 end
 
 namespace :check do
@@ -63,10 +80,7 @@ namespace :check do
   end
 end
 desc "check all requirements"
-task :check => ["check:python",
-                "check:packer",
-                "check:vagrant",
-                "check:free_space"]
+task :check => ['check:python', 'check:packer', 'check:vagrant', 'check:free_space']
 
 desc "Generating variables"
 task :generate_variables => "check:python" do
@@ -84,36 +98,62 @@ namespace :build do
 
   desc "Build core"
   task :core => [:generate_variables, "check:packer"] do
+    target = "./output/#{box_file('core')}"
+    if File.exist?(target)
+      puts "Skip task: file #{target} already exist"
+      next
+    end
     was_good = system("#{$PACKER} build #{ENV['PACKERARGS'] || ""} -var-file=#{VAR_FILE} -only=virtualbox-iso #{PACKER_TEMPLATE}")
+    abort('Something happened') if was_good.nil?
   end
 
   desc 'Build common'
-  task :common => ["check:vagrant", :generate_variables, :core] do
-    run "#{$VAGRANT} up", {'BLACKARCH_PROFILE' => 'core'}
-    run_script 'deploy-common.sh'
-    run_script 'configure.sh'
-    run_script 'cleanup.sh'
-    run "#{$VAGRANT} package --output ./output/blackarch-common-#{created_at}-x86_64-virtualbox.box", {'BLACKARCH_PROFILE' => 'core'}
-    run "#{$VAGRANT}  destroy -f", {'BLACKARCH_PROFILE' => 'core'}
+  task :common => ['check:vagrant', :core] do
+    target = "./output/#{box_file('common')}"
+    if File.exist?(target)
+      puts "Skip task: file #{target} already exist"
+      next
+    end
+    box = VagrantCLI.new 'core'
+    box.up
+    box.script 'install-yaourt.sh', false
+    box.script 'deploy-common.sh'
+    box.script 'configure.sh'
+    box.script 'cleanup.sh'
+    box.package target
+    box.destroy
   end
 
   desc 'Build full'
-  task :full => ["check:vagrant", :generate_variables, :core] do
-    run "#{$VAGRANT} up", {'BLACKARCH_PROFILE' => 'common'}
-    run_script 'deploy-full.sh'
-    run_script 'cleanup.sh'
-    run "#{$VAGRANT} package --output ./output/blackarch-full-#{created_at}-x86_64-virtualbox.box", {'BLACKARCH_PROFILE' => 'common'}
-    run "#{$VAGRANT}  destroy -f", {'BLACKARCH_PROFILE' => 'common'}
+  task :full => ['check:vagrant', :common] do
+    target = "./output/#{box_file('full')}"
+    if File.exist?(target)
+      puts "Skip task: file #{target} already exist"
+      next
+    end
+    box = VagrantCLI.new 'common'
+    box.up
+    box.script 'deploy-full.sh'
+    box.script 'cleanup.sh'
+    box.package target
+    box.destroy
   end
 
 end
 
 desc "Build all"
-task :build => ["build:core",
-                "build:common",
-                "build:full"]
+task :build => "build:full"
 
-desc "Clear"
-task :clear do
-  `rm -vRf ./output/*.box ./packer_cache/ ./.vagrant/ ./variables.json`
+desc "Clean builds"
+task :clean => 'check:vagrant' do
+  for profile_name in ['core', 'common', 'full'] do
+    box = VagrantCLI.new profile_name
+    box.destroy
+    system "#{$VAGRANT} box remove --force --box-version=0 --provider=virtualbox #{box_name(profile_name)}"
+  end
+  Rake::Cleaner.cleanup_files(FileList['output/*.box', '.vagrant', 'variables.json', 'mkmf.log', 'output-virtualbox-iso'])
+end
+
+task :clean_cache do
+  Rake::Cleaner.cleanup_files(FileList['packer_cache/*.iso', 'pkg_cache/*.pkg.*'])
 end
