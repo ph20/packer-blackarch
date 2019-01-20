@@ -1,0 +1,31 @@
+# Custom BlackArch mirror list. Has been created manually  2019-01-20
+
+Server = http://ftp.vim.org/pub/ftp/os/Linux/distr/blackarch/$repo/os/$arch
+Server = http://ftp.yzu.edu.tw/linux/blackarch/blackarch/$repo/os/$arch
+Server = http://blackarch.mirror.digitalpacific.com.au/$repo/os/$arch
+Server = https://ftp.halifax.rwth-aachen.de/blackarch/$repo/os/$arch
+Server = https://mirrors.dotsrc.org/blackarch/$repo/os/$arch
+Server = https://mirror.cedia.org.ec/blackarch/$repo/os/$arch
+Server = http://mirror.espoch.edu.ec/blackarch/$repo/os/$arch
+Server = https://blackarch.org/blackarch/$repo/os/$arch
+Server = http://blackarch.leneveu.fr/$repo/os/$arch
+Server = http://blackarch.tamcore.eu/$repo/os/$arch
+Server = https://mirror.adversec.com/blackarch/$repo/os/$arch
+Server = https://blackarch.tamcore.eu/$repo/os/$arch
+Server = http://mirror.cyberbits.eu/blackarch/$repo/os/$arch
+Server = https://www.mirrorservice.org/sites/blackarch.org/blackarch/$repo/os/$arch
+Server = https://quantum-mirror.hu/mirrors/pub/blackarch/$repo/os/$arch
+Server = http://blackarch.mirror.garr.it/mirrors/blackarch/$repo/os/$arch
+Server = https://mirror.neostrada.nl/blackarch/$repo/os/$arch
+Server = https://ftp.icm.edu.pl/pub/Linux/dist/blackarch/$repo/os/$arch
+Server = http://mirror.truenetwork.ru/blackarch/$repo/os/$arch
+Server = http://mirror.zetup.net/blackarch/$repo/os/$arch/
+Server = https://download.nus.edu.sg/mirror/blackarch/$repo/os/$arch
+Server = http://ftp.linux.org.tr/blackarch/$repo/os/$arch/
+Server = http://blackarch.cs.nctu.edu.tw/$repo/os/$arch
+Server = https://ftp.yzu.edu.tw/Linux/blackarch/$repo/os/$arch
+Server = https://mirror.math.princeton.edu/pub/blackarch/$repo/os/$arch
+Server = http://distro.ibiblio.org/blackarch/$repo/os/$arch
+Server = http://mirror.team-cymru.com/blackarch/$repo/os/$arch
+Server = https://deadbeef.ninja/blackarch/$repo/os/$arch
+Server = http://f.archlinuxvn.org/blackarch/$repo/os/$arch
