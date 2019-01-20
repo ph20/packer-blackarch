@@ -1,5 +1,6 @@
 .idea
 output
+output-virtualbox-iso
 packer_cache
 variables.json
 .vagrant
