@@ -102,8 +102,10 @@ install_base()
     # configure pacman and mirrors
     cp --force /etc/pacman.conf ${CHROOT}/etc/pacman.conf
     cp /etc/pacman.d/mirrorlist ${CHROOT}/etc/pacman.d/mirrorlist
+    /root/conf/pacman-opt.py multilib Include /etc/pacman.d/mirrorlist  # enable multilib in pacman config
     cp /etc/pacman.d/mirrorlist.orig ${CHROOT}/etc/pacman.d/mirrorlist.orig
-    cp --force /etc/pacman.d/blackarch-mirrorlist ${CHROOT}/etc/pacman.d/blackarch-mirrorlist || true
+    cp --force /root/conf/blackarch-mirrorlist-cust ${CHROOT}/etc/pacman.d/blackarch-mirrorlist-cust && \
+        /root/conf/pacman-opt.py blackarch Include /etc/pacman.d/blackarch-mirrorlist-cust
     /usr/bin/arch-chroot ${CHROOT} pacman -Syy --overwrite --quiet --noprogressbar > /dev/null
     /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm  --quiet --noprogressbar --needed base-devel ruby-pkg-config cmake > /dev/null
     /usr/bin/arch-chroot ${CHROOT} pacman -S --noconfirm --overwrite --needed --quiet --noprogressbar archlinux-keyring > /dev/null
