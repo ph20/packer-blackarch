@@ -14,8 +14,13 @@ cp -vr /vagrant/conf/sysconfig/ /etc/
 /bin/systemctl enable gsad.service
 /bin/openvasmd --create-user=admin --role=Admin
 /bin/openvasmd --user=admin --new-password=admun
+# deploing plugins database
+/bin/wget http://dl.greenbone.net/community-nvt-feed-current.tar.bz2 /tmp/community-nvt-feed-current.tar.bz2
+/bin/tar xf /tmp/community-nvt-feed-current.tar.bz2 -C /var/lib/openvas/plugins/
+/bin/rm -f /tmp/community-nvt-feed-current.tar.bz2
 /usr/bin/greenbone-nvt-sync
-/usr/bin/greenbone-certdata-sync
+
 /usr/bin/greenbone-scapdata-sync
+/usr/bin/greenbone-certdata-sync
 /usr/bin/openvas-manage-certs -a -i
 /bin/updatedb
