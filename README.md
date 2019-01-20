@@ -10,7 +10,7 @@ Usage
 ```
 git clone https://github.com/ph20/packer-blackarch.git
 cd packer-blackarch
-./build.sh
+rake build
 ```
 
 Resources used to create this:
