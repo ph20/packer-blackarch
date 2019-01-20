@@ -64,6 +64,11 @@
             "execute_command": "python2 '{{ .Path }}' /etc/pacman.d/mirrorlist",
             "script": "scripts/archlinuxmirrors.py"
         },
+                {
+            "type": "shell",
+            "execute_command": "python2 '{{ .Path }}'",
+            "script": "scripts/enable-multilib.py"
+        },
         {
             "type": "shell",
             "execute_command": "{{ .Vars }} COUNTRY={{ user `country` }} bash '{{ .Path }}'",
