@@ -60,9 +60,6 @@ prepare_env()
     echo "==> Choose mirrors with best speed"
     /usr/bin/cp /etc/pacman.d/mirrorlist /etc/pacman.d/mirrorlist.orig
     /usr/bin/rankmirrors -n 3 /etc/pacman.d/mirrorlist.orig > /etc/pacman.d/mirrorlist
-
-    echo "==> Add multilib to pacman"
-    cat /root/conf/pacman_conf_multilib.patch | patch --fuzz=2 --batch --ignore-whitespace --strip=0 --directory /
     return $SUCCESS
 
 }
