@@ -8,8 +8,6 @@ import re
 
 SECTION_PATTERN = re.compile(r'\[([^\]]+)\]')
 PACMAN_CONF = '/etc/pacman.conf'
-PACMAN_CONF_TMP = PACMAN_CONF + '.tmp_'
-PACMAN_CONF_BACK = PACMAN_CONF + '.back'
 
 
 def section_iterator(input_):
@@ -25,10 +23,13 @@ def section_iterator(input_):
     yield output_, section_
 
 
-def main(section, option_, option_val_):
+def main(section, option_, option_val_, pacman_conf):
+    pacman_conf_tmp = pacman_conf + '.tmp_'
+    pacman_conf_back = pacman_conf + '.back'
+
     was_modified = False
-    with open(PACMAN_CONF) as input_:
-        with open(PACMAN_CONF_TMP, 'w') as out:
+    with open(pacman_conf) as input_:
+        with open(pacman_conf_tmp, 'w') as out:
             sections_present = False
             option_present = False
             for section_data, section_name in section_iterator(input_):
@@ -55,25 +56,29 @@ def main(section, option_, option_val_):
                                                                          option_val=option_val_)
                 out.write(section_string)
                 was_modified = True
-                print('#--------------{}#-------------- # Added to "{}"'.format(section_string, PACMAN_CONF))
+                print('#--------------{}#-------------- # Added to "{}"'.format(section_string, pacman_conf))
             elif option_present:
-                print('Not need modify {}: "{}" section already present'.format(PACMAN_CONF, section))
+                print('Not need modify {}: "{}" section already present'.format(pacman_conf, section))
 
     if was_modified:
-        shutil.copyfile(PACMAN_CONF, PACMAN_CONF_BACK)
-        shutil.copyfile(PACMAN_CONF_TMP, PACMAN_CONF)
-    os.unlink(PACMAN_CONF_TMP)
+        shutil.copyfile(pacman_conf, pacman_conf_back)
+        shutil.copyfile(pacman_conf_tmp, pacman_conf)
+    os.unlink(pacman_conf_tmp)
 
 
 if __name__ == '__main__':
     argv_ = sys.argv[1:]
-    if len(argv_) != 3:
-        print('Arguments error. Usage: "pacman-opt.py  option option_value"", for example: '
+    if len(argv_) not in (3, 4):
+        print('Arguments error. Usage: "pacman-opt.py [pacman.conf] option option_value"", for example: '
               '"pacman-opt.py multilib Include /etc/pacman.d/mirrorlist"')
         exit(1)
     try:
-        SECTION, OPPTION_NAME, OPTION_VAL = argv_
-        main(SECTION, OPPTION_NAME, OPTION_VAL)
+        if len(argv_) == 4:
+            pacman_conf = argv_.pop(0)
+        else:
+            pacman_conf = PACMAN_CONF
+        section, option_name, option_val = argv_
+        main(section, option_name, option_val, pacman_conf)
     except IOError as err:
 
         print(str(err))
