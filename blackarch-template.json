@@ -32,6 +32,16 @@
             "headless" : "{{ user `headless`}}"
         },
         {
+            "type": "vagrant",
+            "provider": "virtualbox",
+            "source_path": "hashicorp/precise64",
+            "communicator": "ssh",
+            "guest_os_type": "ArchLinux_64",
+            "add_force": true,
+            "disk_size": 30720,
+            "hard_drive_interface": "sata"
+        },
+        {
             "type": "qemu",
             "iso_url": "{{ user `iso_url` }}",
             "iso_checksum": "{{ user `iso_checksum` }}",
@@ -65,8 +75,15 @@
             "script": "scripts/archlinuxmirrors.py"
         },
         {
+            "only": ["virtualbox-iso"],
             "type": "shell",
-            "execute_command": "{{ .Vars }} COUNTRY={{ user `country` }} bash '{{ .Path }}'",
+            "execute_command": "{{ .Vars }} bash {{ .Path }} main_rsync",
+            "script": "scripts/blackarch-deploy.sh"
+        },
+        {
+            "only": ["vagrant"],
+            "type": "shell",
+            "execute_command": "{{ .Vars }} bash {{ .Path }} main",
             "script": "scripts/blackarch-deploy.sh"
         },
         {
@@ -77,8 +94,38 @@
         {
             "only": ["virtualbox-iso"],
             "type": "shell",
-            "execute_command": "{{ .Vars }} bash '{{ .Path }}'",
-            "script": "scripts/install-virtualbox.sh"
+            "execute_command": "{{ .Vars }} bash {{ .Path }} update",
+            "script": "scripts/blackarch-deploy.sh"
+        },
+        {
+            "only": ["virtualbox-iso"],
+            "type": "shell",
+            "execute_command": "{{ .Vars }} bash {{ .Path }} safe_reboot",
+            "script": "scripts/blackarch-deploy.sh"
+        },
+        {
+          "only": ["virtualbox-iso"],
+          "type": "shell",
+          "inline": ["echo ping"],
+          "pause_before": "5s"
+        },
+        {
+            "only": ["virtualbox-iso"],
+            "type": "shell",
+            "execute_command": "{{ .Vars }} bash {{ .Path }} install_virtualbox_guest",
+            "script": "scripts/blackarch-deploy.sh"
+        },
+        {
+          "only": ["virtualbox-iso"],
+          "type": "shell",
+          "execute_command": "{{ .Vars }} bash {{ .Path }} safe_reboot",
+          "script": "scripts/blackarch-deploy.sh"
+        },
+        {
+          "only": ["virtualbox-iso"],
+          "type": "shell",
+          "inline": ["echo ping"],
+          "pause_before": "5s"
         },
         {
             "type": "shell",
@@ -87,9 +134,11 @@
         }
     ],
     "post-processors": [
+
         {
             "type": "vagrant",
-            "output": "output/blackarch-core-{{ user `created_at` }}-{{ user `arch`  }}-{{ .Provider }}.box"
+            "only": ["virtualbox-iso"],
+            "output": "output/blackarch-buildenv-{{ user `created_at` }}-{{ user `arch`  }}-{{ .Provider }}.box"
         }
     ]
 }

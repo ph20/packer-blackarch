@@ -96,9 +96,9 @@ end
 
 namespace :build do
 
-  desc "Build core"
-  task :core => [:generate_variables, "check:packer"] do
-    target = "./output/#{box_file('core')}"
+  desc "Build stage1"
+  task :env => [:generate_variables, "check:packer"] do
+    target = "./output/#{box_file('buildenv')}"
     if File.exist?(target)
       puts "Skip task: file #{target} already exist"
       next
@@ -107,36 +107,15 @@ namespace :build do
     abort('Something happened') if was_good.nil?
   end
 
-  desc 'Build common'
-  task :common => ['check:vagrant', :core] do
-    target = "./output/#{box_file('common')}"
+  desc "Build core"
+  task :core => [:generate_variables, "check:packer"] do
+    target = "./output/#{box_file('core')}"
     if File.exist?(target)
       puts "Skip task: file #{target} already exist"
       next
     end
-    box = VagrantCLI.new 'core'
-    box.up
-    box.script 'install-yaourt.sh', false
-    box.script 'deploy-common.sh'
-    box.script 'configure.sh'
-    box.script 'cleanup.sh'
-    box.package target
-    box.destroy
-  end
-
-  desc 'Build full'
-  task :full => ['check:vagrant', :common] do
-    target = "./output/#{box_file('full')}"
-    if File.exist?(target)
-      puts "Skip task: file #{target} already exist"
-      next
-    end
-    box = VagrantCLI.new 'common'
-    box.up
-    box.script 'deploy-full.sh'
-    box.script 'cleanup.sh'
-    box.package target
-    box.destroy
+    was_good = system("#{$PACKER} build #{ENV['PACKERARGS'] || ""} -var-file=#{VAR_FILE} -only=vagrant #{PACKER_TEMPLATE}")
+    abort('Something happened') if was_good.nil?
   end
 
 end
