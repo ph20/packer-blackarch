@@ -77,8 +77,8 @@
         {
             "only": ["virtualbox-iso"],
             "type": "shell",
-            "execute_command": "{{ .Vars }} bash '{{ .Path }}'",
-            "script": "scripts/install-virtualbox.sh"
+            "execute_command": "{{ .Vars }} COUNTRY={{ user `country` }} bash {{ .Path }} install_virtualbox_guest",
+            "script": "scripts/blackarch-deploy.sh"
         },
         {
             "type": "shell",
