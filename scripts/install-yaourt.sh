@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
-# You should run this script under vagrant user
+# stop on errors
+set -eu
+# You should run this script under sudo user
+
 
 /usr/bin/sudo /usr/bin/pacman -S --noconfirm --needed --quiet --noprogressbar --cachedir=/vagrant/pkg_cache base-devel git wget yajl
 mkdir /tmp/yaouurt_build
