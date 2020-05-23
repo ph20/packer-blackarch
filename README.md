@@ -64,5 +64,5 @@ Technology stack
 - `RAKE` - Make-like program implemented in Ruby https://ruby.github.io/rake/
 - `Vagrant by HashiCorp` - an open-source software product for building and maintaining portable virtual software development environments https://www.vagrantup.com/ 
 
-Other: [Oracle VM VirtualBox](), [Python](), [GNU Bash]()
+Other: [Oracle VM VirtualBox](https://www.virtualbox.org/), [Python](https://www.python.org/), [GNU Bash](https://www.gnu.org/software/bash/)
 
