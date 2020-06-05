@@ -61,7 +61,7 @@
         },
         {
             "type": "shell",
-            "execute_command": "python2 '{{ .Path }}' /etc/pacman.d/mirrorlist",
+            "execute_command": "python '{{ .Path }}' /etc/pacman.d/mirrorlist",
             "script": "scripts/archlinuxmirrors.py"
         },
         {

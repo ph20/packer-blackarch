@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -9,8 +9,13 @@ import os
 import sys
 import datetime
 
-import urllib2
-from lxml import html as html
+from urllib.request import urlopen
+from urllib.error import URLError
+try:
+    from lxml import html as html
+except ModuleNotFoundError as import_error:
+    print("Can't find python3 module lxml: {}".format(import_error))
+    sys.exit(1)
 
 DOWNLOAD_PAGE = 'https://blackarch.org/downloads.html'
 
@@ -24,11 +29,11 @@ def obtain_iso_url():
     Parse information from official site
     """
     try:
-        response = urllib2.urlopen(DOWNLOAD_PAGE, timeout=5)
+        response = urlopen(DOWNLOAD_PAGE, timeout=5)
         content = response.read()
-    except urllib2.URLError as e:
+    except URLError as e:
         raise ExitException(str(e) + ' ' + DOWNLOAD_PAGE)
-    tree = html.fromstring(content)
+    tree = html.fromstring(content.decode())
     try:
         subtree = tree.xpath('//table[@class="download"]/tr[contains(td[1], "BlackArch Linux 64 bit Netinstall ISO")]').pop()
         sha1sum = subtree.xpath('td[5]//text()').pop()

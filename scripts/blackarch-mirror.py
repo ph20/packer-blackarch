@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -7,13 +7,8 @@ Script for obtaining fresh blackarch mirror list
 
 import sys
 from datetime import datetime
-try:
-    import urllib2
-except ImportError, ex:
-    urllib2 = None
-    sys.stderr.write("urllib2 absent: %s\n" % str(ex))
-    sys.exit(1)
-
+from urllib.request import urlopen
+from urllib.error import URLError
 
 DOWNLOAD_PAGE = 'https://raw.githubusercontent.com/BlackArch/blackarch/master/mirror/mirror.lst'
 
@@ -30,18 +25,18 @@ def get_last_update(url):
         return
     lastupdate_timestamp = 0
     try:
-        response = urllib2.urlopen(lastupdate_url, timeout=25)
-        lastupdate_timestamp = int(response.readline().strip())
-    except urllib2.URLError as err:
+        response = urlopen(lastupdate_url, timeout=25)
+        lastupdate_timestamp = int(response.readline().decode().strip())
+    except URLError as err:
         print('WARNING: can\'t obtain url "{}". {}'.format(lastupdate_url, str(err)))
     return lastupdate_timestamp
 
 
 def obtain_blackarch_mirrors(out_path):
     try:
-        response = urllib2.urlopen(DOWNLOAD_PAGE, timeout=5)
-        mirrors = response.read()
-    except urllib2.URLError as e:
+        response = urlopen(DOWNLOAD_PAGE, timeout=5)
+        mirrors = response.read().decode()
+    except URLError as e:
         raise ExitException(str(e) + ' ' + DOWNLOAD_PAGE)
 
     mirrors_list = []
@@ -68,6 +63,6 @@ if __name__ == '__main__':
         sys.exit(1)
     try:
         obtain_blackarch_mirrors(sys.argv[1])
-    except ExitException, ex:
+    except ExitException as ex:
         sys.stderr.write("Can\'t open url: %s\n" % str(ex))
         sys.exit(1)

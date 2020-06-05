@@ -52,10 +52,10 @@ namespace :check do
     abort("For building need ~25G free space, but avalible only ~#{mb_available/1024}Gb") if mb_available < NEEDED_FREE_SPACE
   end
 
-  desc "Check present python2 interpreter"
+  desc "Check present python3 interpreter"
   task :python do
-    $PYTHON = find_executable 'python2'
-    abort("Can't find python2 executable") if $PYTHON.nil?
+    $PYTHON = find_executable 'python3'
+    abort("Can't find python3 executable") if $PYTHON.nil?
     version = %x{ #{$PYTHON} -c "import sys; print(sys.version.split()[0])" }
     abort("Can't detect version of #{$PYTHON}") if version.strip.empty?
     puts "    #{$PYTHON}\n    Python #{version}"
@@ -118,7 +118,7 @@ namespace :build do
     box.up
     box.script 'install-yaourt.sh', false
     box.script 'deploy-common.sh'
-    box.script 'configure.sh'
+    box.script 'deploy-openvas9.sh'
     box.script 'cleanup.sh'
     box.package target
     box.destroy

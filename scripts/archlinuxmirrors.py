@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 """
@@ -6,12 +6,8 @@ Script for obtain fresh mirrors from https://www.archlinux.org/mirrorlist/all/
 """
 
 import sys
-try:
-    import urllib2
-except ImportError, ex:
-    urllib2 = None
-    sys.stderr.write("urllib2 absent: %s\n" % str(ex))
-    sys.exit(1)
+from urllib.request import urlopen
+from urllib.error import URLError
 
 
 DOWNLOAD_PAGE = 'https://www.archlinux.org/mirrorlist/all/'
@@ -23,9 +19,9 @@ class ExitException(Exception):
 
 def obtain_archlinux_mirrors(out_path):
     try:
-        response = urllib2.urlopen(DOWNLOAD_PAGE, timeout=5)
-        mirrors = response.read()
-    except urllib2.URLError as e:
+        response = urlopen(DOWNLOAD_PAGE, timeout=5)
+        mirrors = response.read().decode()
+    except URLError as e:
         raise ExitException(str(e) + ' ' + DOWNLOAD_PAGE)
 
     prev_line = ''
@@ -47,6 +43,6 @@ if __name__ == '__main__':
         sys.exit(1)
     try:
         obtain_archlinux_mirrors(sys.argv[1])
-    except ExitException, ex:
+    except ExitException as ex:
         sys.stderr.write("Can\'t open url: %s\n" % str(ex))
         sys.exit(1)
