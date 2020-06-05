@@ -86,7 +86,7 @@ desc "Generating variables"
 task :generate_variables => "check:python" do
   iso_url, iso_checksum = %x[ #{$PYTHON} #{WORKSPACE}/isourl.py ].split
   json_struct = { :headless => 'true',
-                  :created_at => Time.now.strftime("%Y%d%m"),
+                  :created_at => Time.now.strftime("%Y%m%d"),
                   :iso_checksum => iso_checksum,
                   :iso_url => iso_url }
   puts "Variables wroten to file '#{VAR_FILE}'"
