@@ -1,0 +1,12 @@
+[Unit]
+Description=Open Vulnerability Assessment System Manager Daemon
+Documentation=man:gvmd(8) http://www.openvas.org/
+Wants=openvas-scanner.service
+
+[Service]
+Type=forking
+PIDFile=/var/run/gvmd.pid
+ExecStart=/usr/bin/gvmd --unix-socket=/var/run/gvmd.sock
+
+[Install]
+WantedBy=multi-user.target

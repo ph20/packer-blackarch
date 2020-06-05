@@ -15,7 +15,6 @@ ln -s /usr/lib/libalpm.so.11 /usr/lib/libalpm.so.10
     wpscan \
     joomscan \
     masscan \
-    openvas-manager openvas-scanner gsa gsd blackarch/greenbone-security-assistant python2 \
     zaproxy libxtst xorg-xauth \
-    w3af dartspylru python2-jinja python2-tblib python2-pyasn1 halberd python2-markdown \
+    w3af python2-jinja python2-tblib python2-pyasn1 halberd python2-markdown \
     burpsuite
